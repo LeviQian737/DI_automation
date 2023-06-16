@@ -42,7 +42,6 @@ table = session.sql('''create or replace table DATA_LAB_TEST.PREDICTOR.TR_DEVICE
     MARKET VARCHAR(10),
     FIRSTTIMEACTIVATEDDATE TIMESTAMP_NTZ(9),
     SUBSCRIBEDSTATUS VARCHAR(50),
-    ISEUROACTIVATED BOOLEAN,
     BUNDLENUMBER VARCHAR(50),
     BUNDLEDID VARCHAR(50),
     BUNDLEUPDATEDATE TIMESTAMP_NTZ(9),
@@ -54,29 +53,32 @@ table = session.sql('''create or replace table DATA_LAB_TEST.PREDICTOR.TR_DEVICE
 )
 as
 ( 
-SELECT 
-    DEVICEID,
-    PLATFORMTYPE,
-    DEALERID,
-    BPNUMBER,
-    RECORDCREATEDDATE,
+select A.DEVICEID,
+    max(PLATFORMTYPE) as PLATFORMTYPE,
+    max(DEALERID) as DEALERID,
+    max(BPNUMBER) as BPNUMBER,
+    max(RECORDCREATEDDATE) as RECORDCREATEDDATE,
     MARKET,
     FIRSTTIMEACTIVATEDDATE,
-    MAX(SUBSCRIBEDSTATUS) SUBSCRIBEDSTATUS,
-    ISEUROACTIVATED,
-    left(BUNDLENUMBER, 4) AS BUNDLENUMBER,
-    MAX(BUNDLEDID) AS BUNDLEDID,
-    MAX(BUNDLEUPDATEDATE) AS BUNDLEUPDATEDATE,
-    BUNDLEUPDATEDBY,
+    min(SUBSCRIBEDSTATUS) as SUBSCRIBEDSTATUS,
+    A.BUNDLENUMBER,
+    max(BUNDLEDID) as BUNDLEDID,
+    A.BUNDLEUPDATEDATE,
+    max(BUNDLEUPDATEDBY) as BUNDLEUPDATEDBY,
     LICENSERECORDID,
-    LASTUPGRADEFREE,
-    SERIALNUMBER as SERIALNUMBER_ORIG,
-    case when upper(try_hex_decode_string(deviceid)) regexp '[A-Z0-9]*'
-        and length(upper(try_hex_decode_string(deviceid))) = 12
-        then upper(try_hex_decode_string(deviceid))
+    max(LASTUPGRADEFREE) as LASTUPGRADEFREE,
+    MAX(SERIALNUMBER) as SERIALNUMBER_ORIG,
+    case when upper(try_hex_decode_string(A.deviceid)) regexp '[A-Z0-9]*'
+        and length(upper(try_hex_decode_string(A.deviceid))) = 12
+        then upper(try_hex_decode_string(A.deviceid))
     end as SERIALNUMBER
-from diagnostics.snapondevices.devicestatushistory
-group by 1, 2, 3, 4, 5, 6, 7, 9, 10, 13, 14, 15, 16, 17
+from (select deviceid, left(bundlenumber, 4) as bundlenumber, max(bundleupdatedate) as bundleupdatedate, max(recordid) as recordid
+        from diagnostics.snapondevices.devicestatushistory 
+        group by deviceid, left(bundlenumber, 4)
+) as A
+inner join diagnostics.snapondevices.devicestatushistory B
+on A.deviceid=B.deviceid AND A.bundlenumber=left(B.bundlenumber, 4) AND A.bundleupdatedate = B.bundleupdatedate 
+group by 1, 6, 7, 9, 11, 13, 16
 )''')
 
 table.collect()
