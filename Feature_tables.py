@@ -8,10 +8,11 @@ from snowflake.snowpark.types import *
 
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 
-
+today = datetime.today()
+current_year = today.year
 
 SCHEME = "https"
 ACCOUNT = "wa15423.us-east-2.aws"
@@ -53,7 +54,7 @@ df_DI_upgrades = df_DI_upgrades.select(col('BPN'), col('GUID'), col('PARTYID'), 
 
 orders_DI_cust = all_orders.join(orders_DI.select(col("PARTYID"), col('FIRST_DI_PURCHASE')).distinct(), ['PARTYID'], 'inner').filter(col('COMPLETEDATE') > col('FIRST_DI_PURCHASE') )
 
-for year in range(2014, 2023): 
+for year in range(2014, current_year): 
     orders_ngt_cur = orders_DI_cust.filter((col('YEAR') == year))\
     .groupBy('PARTYID','YEAR').agg(sum(col("BASE_MODEL").isNotNull().cast('integer')).alias("CNT_DI"))\
     .filter(col('CNT_DI') == 0).drop('CNT_DI')\

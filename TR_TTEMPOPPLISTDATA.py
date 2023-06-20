@@ -33,8 +33,11 @@ connection_parameters = {
 
 session = Session.builder.configs(connection_parameters).create()
 
-table = session.sql('''create or replace table DATA_LAB_TEST.PREDICTOR.TR_TTEMPOPPLISTDATA AS
-(select *, 
+table = session.sql('''Truncate table DATA_LAB_TEST.PREDICTOR.TR_TTEMPOPPLISTDATA''')
+table.collect()
+
+table = session.sql('''Insert into DATA_LAB_TEST.PREDICTOR.TR_TTEMPOPPLISTDATA
+select *, 
     case when upper(platform) like '%ZEUS%' then 'ZEUS'
         when upper(platform) like '%VERUS%' then 'VERUS'
         when upper(platform) like '%VERDICT%' then 'VERDICT'
@@ -59,7 +62,6 @@ table = session.sql('''create or replace table DATA_LAB_TEST.PREDICTOR.TR_TTEMPO
     else null
     end as serialnumber,
     replace(customerphone, '-', '') as phonenumber_adj
-from DIAGNOSTICS.BUSINESS_DATA.TTEMPOPPLISTDATA
-where FRANCHISEECOUNTRYCODE = 'US')''')
+from DIAGNOSTICS.BUSINESS_DATA.TTEMPOPPLISTDATA''')
 
 table.collect()

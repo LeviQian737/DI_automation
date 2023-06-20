@@ -33,26 +33,10 @@ connection_parameters = {
 
 session = Session.builder.configs(connection_parameters).create()
 
-table = session.sql('''create or replace table DATA_LAB_TEST.PREDICTOR.TR_DEVICESTATUSHISTORY (
-    DEVICEID VARCHAR(50),
-    PLATFORMTYPE VARCHAR(50),
-    DEALERID VARCHAR(50),
-    BPNUMBER VARCHAR(50),
-    RECORDCREATEDDATE TIMESTAMP_NTZ(9),
-    MARKET VARCHAR(10),
-    FIRSTTIMEACTIVATEDDATE TIMESTAMP_NTZ(9),
-    SUBSCRIBEDSTATUS VARCHAR(50),
-    BUNDLENUMBER VARCHAR(50),
-    BUNDLEDID VARCHAR(50),
-    BUNDLEUPDATEDATE TIMESTAMP_NTZ(9),
-    BUNDLEUPDATEDBY VARCHAR(50),
-    LICENSERECORDID NUMBER(38,0),
-    LASTUPGRADEFREE BOOLEAN,
-    SERIALNUMBER_ORIG VARCHAR(50),
-    SERIALNUMBER VARCHAR(50)
-)
-as
-( 
+table = session.sql('''Truncate table DATA_LAB_TEST.PREDICTOR.TR_DEVICESTATUSHISTORY''')
+table.collect()
+
+table = session.sql('''Insert into  DATA_LAB_TEST.PREDICTOR.TR_DEVICESTATUSHISTORY 
 select A.DEVICEID,
     max(PLATFORMTYPE) as PLATFORMTYPE,
     max(DEALERID) as DEALERID,
@@ -78,7 +62,6 @@ from (select deviceid, left(bundlenumber, 4) as bundlenumber, max(bundleupdateda
 ) as A
 inner join diagnostics.snapondevices.devicestatushistory B
 on A.deviceid=B.deviceid AND A.bundlenumber=left(B.bundlenumber, 4) AND A.bundleupdatedate = B.bundleupdatedate 
-group by 1, 6, 7, 9, 11, 13, 16
-)''')
+group by 1, 6, 7, 9, 11, 13, 16''')
 
 table.collect()

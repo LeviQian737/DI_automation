@@ -9,9 +9,13 @@ import numpy as np
 np.float = float
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 PREDICT_YEAR = 2023
+today = datetime.today()
+current_month_start = datetime(today.year, today.month, 1)
+previous_month_start = datetime(today.year, today.month-1, 1)
+
 
 SCHEME = "https"
 ACCOUNT = "wa15423.us-east-2.aws"
@@ -34,40 +38,9 @@ connection_parameters = {
 
 session = Session.builder.configs(connection_parameters).create()
 
-query = '''create or replace TABLE DATA_LAB_TEST.PREDICTOR.TR_ORDERS_DEVICE (
-    BPN NUMBER(38,0),
-    GUID VARCHAR(40),
-    ITEM_SKU VARCHAR(40),
-    SERIALNUMBER_RAW VARCHAR(16777216),
-    SERIALNUMBER VARCHAR(16777216),
-    SERIALNUMBER_ADJ VARCHAR(16777216),
-    COMPLETEDATE TIMESTAMP_NTZ(9),
-    YEAR NUMBER(4,0),
-    MONTH NUMBER(2,0),
-    PREDICT_QUARTER NUMBER(1,0),
-    AGE NUMBER(38,0),
-    CALLDAY NUMBER(10,0),
-    SHOP_TYPE VARCHAR(100),
-    SHOPGUID VARCHAR(16777216),
-    SHOPOWNER NUMBER(1,0),
-    LINETYPE VARCHAR(16777216),
-    SALE_LIST_PRICE FLOAT,
-    DISCOUNT_AMOUNT FLOAT,
-    SHORT VARCHAR(6),
-    MAJOR VARCHAR(6),
-    MINOR VARCHAR(6),
-    ITEM_PRICE FLOAT,
-    BASE_MODEL VARCHAR(30),
-    TIER NUMBER(1,0),
-    COUNTRY VARCHAR(18),
-    FIRST_PURCHASE_YEAR NUMBER(4,0),
-    TIME_GAP NUMBER(5,0),
-    IDX NUMBER(18,0),
-    SERIALNUMBER_FUZZY VARCHAR(16777216),
-    PARTYID VARCHAR(18),
-    SHOPPARTYID VARCHAR(18)
-)
-AS (
+query1 = """DELETE FROM DATA_LAB_TEST.PREDICTOR.TR_ORDERS_DEVICE WHERE completedate >= '{0}'"""
+
+query2 = '''INSERT into DATA_LAB_TEST.PREDICTOR.TR_ORDERS_DEVICE 
 select 
     A.*, 
     B.FIRST_PURCHASE_YEAR AS FIRST_PURCHASE_YEAR, 
@@ -194,7 +167,7 @@ WHERE
         OR UPPER(A.NAME2) NOT LIKE '%CASH%'
         OR UPPER(A.NAME1) NOT LIKE 'WALK%'
         OR UPPER(A.NAME2) NOT LIKE 'WALK%')  
-    AND o.completedate >= '01-JAN-2013' 
+    AND o.completedate >= '{0}' 
     AND o.isdeleted = 0 ) A
 LEFT JOIN 
     (SELECT USER_ID, MIN(YEAR(TO_TIMESTAMP_NTZ(TIMESTAMP/1000))) AS first_purchase_year 
@@ -206,7 +179,10 @@ LEFT JOIN
     ON A.GUID = ID.CLIENTGUID AND A.BPN = ID.CLIENTKEY
 LEFT JOIN 
     DATA_LAB_TEST.PREDICTOR.UNIVERSAL_ID_VIEW ID2
-    ON A.SHOPGUID = ID2.CLIENTGUID AND A.BPN = ID2.CLIENTKEY )'''
+    ON A.SHOPGUID = ID2.CLIENTGUID AND A.BPN = ID2.CLIENTKEY'''
 
-table = session.sql(query)
+table = session.sql(query1.format(previous_month_start))
+table.collect()
+
+table = session.sql(query2.format(previous_month_start))
 table.collect()
