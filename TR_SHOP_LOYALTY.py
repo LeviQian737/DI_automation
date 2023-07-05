@@ -37,29 +37,28 @@ session = Session.builder.configs(connection_parameters).create()
 
 query = '''Insert into DATA_LAB_TEST.PREDICTOR.TR_SHOP_LOYALTY as
 with p as
-(select o.bpn, 
-    o.shopguid, 
+(select o.shoppartyid, 
     count(distinct o.serialnumber_fuzzy) as DI_CNT,
-    count(distinct o.guid) as TECH_CNT
+    count(distinct o.partyid) as TECH_CNT
 from DATA_LAB_TEST.PREDICTOR.TR_ORDERS_DEVICE o,
     DATA_LAB_TEST.PREDICTOR.TR_TTEMPOPPLISTDATA t,
-    (select distinct bpn, guid 
+    (select distinct partyid 
     from DATA_LAB_TEST.PREDICTOR.TR_ORDERS_DEVICE 
-    where year(completedate) >= '{0}' and year(completedate) < '{1}'
+    where year(completedate) >= {0} and year(completedate) < {1}
         and callday < 6 
         and callday > 0) c 
 where o.short = 'DI'
     and o.major in ('PF', 'SF')
-    and year(t.upgradedate) >= '{0}'
+    and year(t.upgradedate) >= {0}
     and o.serialnumber_fuzzy = t.serialnumber
-    and o.bpn = c.bpn 
-    and o.guid = c.guid 
-group by o.bpn, o.shopguid
+    and o.partyid = c.partyid 
+    and o.shoppartyid is not null 
+    and o.partyid is not null
+group by o.shoppartyid
 order by TECH_CNT, DI_CNT
 )
 select 
-    bpn, 
-    shopguid, 
+    shoppartyid, 
     DI_CNT,
     TECH_CNT,
     ROW_NUMBER() OVER (
