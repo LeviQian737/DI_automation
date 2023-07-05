@@ -62,7 +62,7 @@ train.count(), serials.count(), use_df.count()
 train = train.drop(['SERIALNUMBER_FUZZY', 'LAST_UPDATE_DISTANCE', 'UPDATE_COUNT', 'UPDATE_FREQ', 'HAS_SERIAL'])
 
 
-train = train.join(serials, on="IDX", how="left").select(col('PARTYID'), col('RN'), col('LABEL'), col('DATE_PREDICT'), col('YEAR_PREDICT'), col('ITEM_SKU'), col('ITEM_PRICE'), col('BASE_MODEL'), col('TIER'), col('GAP_DAY'), col('COMPLETEDATE'), col('DI_PURCHASED'), col('SERIALNUMBER_FUZZY'), col('IDX'))
+train = train.join(serials, on="IDX", how="left").select(col('PARTYID'), col('DATE_PREDICT'), col('YEAR_PREDICT'), col('ITEM_SKU'), col('ITEM_PRICE'), col('BASE_MODEL'), col('TIER'), col('GAP_DAY'), col('COMPLETEDATE'), col('DI_PURCHASED'), col('SERIALNUMBER_FUZZY'), col('IDX'))
 train = train.cache_result()
 
 
@@ -116,7 +116,7 @@ update_count = m2.group_by('IDX').count().select(col('IDX'), col('COUNT').alias(
 df2 = df2.join(update_count, on="IDX", how="left")
 
 
-df2.filter((df2['SERIALNUMBER_FUZZY'].isNotNull()) & (df2['UPDATE_COUNT'].isNull())).count()
+#df2.filter((df2['SERIALNUMBER_FUZZY'].isNotNull()) & (df2['UPDATE_COUNT'].isNull())).count()
 
 
 last_update_date = m2.select(col('IDX'), col('BUNDLEUPDATEDATE')).group_by(['IDX']).agg(max('BUNDLEUPDATEDATE').alias('UD'))
