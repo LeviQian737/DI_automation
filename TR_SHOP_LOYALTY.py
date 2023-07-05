@@ -35,7 +35,7 @@ connection_parameters = {
 session = Session.builder.configs(connection_parameters).create()
 
 
-query = '''Insert into DATA_LAB_TEST.PREDICTOR.TR_SHOP_LOYALTY as
+query = '''Insert into DATA_LAB_TEST.PREDICTOR.TR_SHOP_LOYALTY
 with p as
 (select o.shoppartyid, 
     count(distinct o.serialnumber_fuzzy) as DI_CNT,
